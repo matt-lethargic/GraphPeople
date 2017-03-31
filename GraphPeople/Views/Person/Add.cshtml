@@ -1,16 +1,15 @@
-﻿@model GraphPeople.ViewModels.Person.PersonViewModel
+﻿@model GraphPeople.Models.Person
 @{
     ViewBag.Title = "Add";
 }
 
-<h2>Add</h2>
+<h2>Add Person</h2>
 
 @using (Html.BeginForm("Save", "Person", FormMethod.Post)) 
 {
     @Html.AntiForgeryToken()
     
     <div class="form-horizontal">
-        <h4>PersonViewModel</h4>
         <hr />
         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
         <div class="form-group">

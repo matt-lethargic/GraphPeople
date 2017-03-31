@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Web.Mvc;
 using GraphPeople.Models;
-using GraphPeople.ViewModels.Person;
 using Neo4jClient;
 
 namespace GraphPeople.Controllers
@@ -13,13 +12,21 @@ namespace GraphPeople.Controllers
 
         public PersonController()
         {
-            _graphClient = new GraphClient(new Uri("http://localhost:7474/db/data"), "username", "password");
-            //_graphClient.Connect();
+            _graphClient = new GraphClient(new Uri("http://localhost:7474/db/data"), "neo4j", "password");
+            _graphClient.Connect();
         }
 
-        public ActionResult Index()
+        public ActionResult Index(int page = 1, int size = 10)
         {
-            return View();
+            var people = _graphClient.Cypher
+                .Match("(person:Person)")
+                .Return(person => person.As<Person>())
+                .OrderBy("person.Name")
+                .Skip((page - 1) * size)
+                .Limit(size)
+                .Results;
+
+            return View(people);
         }
 
         public ActionResult Add()
@@ -28,13 +35,12 @@ namespace GraphPeople.Controllers
         }
 
         [HttpPost]
-        public ActionResult Save(PersonViewModel model)
+        public ActionResult Save(Person person)
         {
-            Person personToSave = new Person
+            if (person.Id == Guid.Empty)
             {
-                Id = model.Id == Guid.Empty ? Guid.NewGuid() : model.Id,
-                Name = model.Name
-            };
+                person.Id = Guid.NewGuid();
+            }
 
             // Creates if not exists
             _graphClient.Cypher
@@ -43,8 +49,8 @@ namespace GraphPeople.Controllers
                 .Set("person = {personToSave}")
                 .WithParams(new
                 {
-                    id = personToSave.Id,
-                    personToSave = personToSave
+                    id = person.Id,
+                    personToSave = person
                 })
                 .ExecuteWithoutResults();
 
